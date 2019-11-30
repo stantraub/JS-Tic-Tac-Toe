@@ -26,5 +26,68 @@ function startGame() {
 }
 
 function turnClick(square) {
-    console.log(square.target.id);
+    if (typeof origBoard[square.target.id] === 'number') {
+        turn(square.target.id, huPlayer);
+        if (!checkWin(origBoard, huPlayer) && !checkTie()) turn(bestSpot(), aiPlayer);
+    }
+}
+
+function turn(squareId, player) {
+    origBoard[squareId] = player;
+    document.getElementById(squareId).innerText = player;
+    let gameWon = checkWin(origBoard, player);
+    if (gameWon) gameOver(gameWon);
+}
+
+function checkWin(board, player) {
+    let plays = board.reduce((a, e, i) => //find all places on the board that have been played in
+        (e === player) ? a.concat(i) : a, []); //a is the accumulator we are initializing to empty array
+        //e is the board element and i is the index
+    let gameWon = null;
+    for (let [index, win] of winCombos.entries()) {
+        if (win.every(ele => plays.indexOf(ele) > -1)) { //if all of the plays exist for that win combination
+            gameWon = {index: index, player: player};
+            break;
+        }
+        
+    }
+
+    return gameWon
+}
+
+function gameOver(gameWon) {
+    for (let index of winCombos[gameWon.index]) {
+        document.getElementById(index).style.backgroundColor = 
+        gameWon.player === huPlayer ? 'blue' : 'red';
+    }
+    for (let i  = 0; i  < cells.length; i++) {
+        cells[i].removeEventListener('click', turnClick, false)
+    }
+    declareWinner(gameWon.player === huPlayer ? 'You win!' : 'You Lose')
+}
+
+function declareWinner(who) {
+    document.querySelector(".endgame").style.display = 'block';
+    document.querySelector('.endgame .text').innerText = who;
+}
+
+function emptySquares() {
+    return origBoard.filter(s => typeof s === 'number');
+}
+
+function bestSpot() {
+    return emptySquares()[0];
+}
+
+function checkTie() {
+    if (emptySquares().length === 0) {
+        for (let i = 0; i < cells.length; i++) {
+            cells[i].style.backgroundColor = 'green';
+            cells[i].removeEventListener('click', turnClick, false)            
+        }
+        declareWinner('Tie Game');
+        return true;
+    }
+
+    return false;
 }
